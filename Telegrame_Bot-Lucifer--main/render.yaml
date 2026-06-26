@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: lucifer-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && apt-get update && apt-get install -y ffmpeg
+    startCommand: python main.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: RENDER_EXTERNAL_URL
+        sync: false # You will need to paste your app URL here in the dashboard
+      - key: OPENWEATHERMAP_API_KEY
+        sync: false
+      - key: IMAGE_GEN_KEY
+        sync: false
+      - key: ADMIN_ID
+        sync: false

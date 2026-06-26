@@ -1,0 +1,57 @@
+# ========================
+# SECRETS — NEVER COMMIT
+# ========================
+.env
+*.env.*
+!.env.example
+
+# ========================
+# PYTHON
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ========================
+# VIRTUAL ENVIRONMENT
+# ========================
+.venv/
+venv/
+ENV/
+
+# ========================
+# LOGS & RUNTIME STATE
+# ========================
+bot.log
+*.log
+*.log.*
+state.json
+reminders.json
+
+# ========================
+# DEBUG & TEMP FILES
+# ========================
+tmp/
+daraz_debug.html
+test_daraz.py
+
+# ========================
+# IDE FILES
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ========================
+# OS FILES
+# ========================
+Thumbs.db
+.DS_Store
+desktop.ini

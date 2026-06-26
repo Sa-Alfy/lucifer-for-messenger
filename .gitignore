@@ -1,0 +1,144 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SECRETS & CREDENTIALS  ← most important section
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Environment files (API keys, DB URLs, tokens)
+.env
+.env.*
+!.env.example          # keep the template — it has no real values
+
+# Private key / certificate files
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.csr
+
+# Generic secret file patterns
+*.secret
+*_secret.*
+*secret*key*
+secrets.json
+credentials.json
+service_account*.json
+token.json
+token.pickle
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PYTHON
+# ─────────────────────────────────────────────────────────────────────────────
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Build / distribution artifacts
+*.egg-info/
+*.egg
+dist/
+build/
+wheels/
+sdist/
+
+# Type-checking caches
+.mypy_cache/
+.dmypy.json
+.pytype/
+.pyre/
+
+# Profiling output
+*.prof
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VIRTUAL ENVIRONMENTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TESTING & COVERAGE
+# ─────────────────────────────────────────────────────────────────────────────
+
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.lcov
+nosetests.xml
+test-results/
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LOGS & TEMP FILES
+# ─────────────────────────────────────────────────────────────────────────────
+
+*.log
+*.log.*
+logs/
+tmp/
+temp/
+scratch/
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OPERATING SYSTEM
+# ─────────────────────────────────────────────────────────────────────────────
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EDITORS & IDEs
+# ─────────────────────────────────────────────────────────────────────────────
+
+# JetBrains (PyCharm, etc.)
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Vim / Emacs
+*.swp
+*.swo
+*.swn
+*~
+\#*\#
+.\#*
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PROJECT-SPECIFIC
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Antigravity IDE agent data (local dev tooling — not project code)
+.agents/
+
+# Skills lock file (auto-generated, not needed in source control)
+skills-lock.json

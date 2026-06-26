@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: messenger-ai-assistant
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+
+    envVars:
+      # ── Phase 1: Required ──────────────────────────────────────
+      - key: DATABASE_URL
+        sync: false           # set manually in Render dashboard
+      - key: REDIS_URL
+        sync: false
+
+      # ── Runtime ───────────────────────────────────────────────
+      - key: ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: PORT
+        value: "8000"
+
+      # ── Phase 2: Facebook Messenger ───────────────────────────
+      - key: FB_PAGE_ACCESS_TOKEN
+        sync: false
+      - key: FB_APP_SECRET
+        sync: false
+      - key: FB_VERIFY_TOKEN
+        sync: false
+      - key: FB_PAGE_ID
+        sync: false
+
+      # ── Phase 3+: AI Providers ────────────────────────────────
+      - key: GROQ_API_KEY
+        sync: false
+      - key: HF_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # ── Phase 6: Supabase management API ──────────────────────
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
