@@ -1,21 +1,26 @@
 # Lucifer — Facebook Messenger AI Assistant
 
-> A production-grade AI assistant bot for Facebook Messenger, built with FastAPI, Groq (text), and Gemini (vision). Deployed on Render with Neon Postgres and Upstash Redis.
+> A production-grade AI assistant bot for Facebook Messenger, built with FastAPI, Groq (text + transcription + translation), Gemini (vision + OCR), and Hugging Face FLUX (image generation). Deployed on Render with Neon Postgres and Upstash Redis.
 
 ---
 
-## Features (Current — Phase 3)
+## Features (Current — Phase 4)
 
 | Capability | Details |
 |---|---|
 | 🤖 **AI Chat** | Powered by Groq (`openai/gpt-oss-120b`, fallback: `gpt-oss-20b`) |
 | 🖼️ **Image Understanding** | Send any photo — Gemini 2.5 Flash describes and responds to it |
+| 🎨 **Image Generation** | `/image <prompt>` — generates via HF FLUX.1-schnell, hosted on Supabase |
+| 🔍 **OCR** | `/ocr` + a photo attachment — extracts literal text via Gemini vision |
+| 🌐 **Translation** | `/translate <language> <text>` — powered by Groq |
+| 💡 **AI Text Tools** | `/explain`, `/summarize`, `/rewrite` — via Groq |
+| 🎙️ **Voice Messages** | Voice input auto-transcribed via Groq Whisper; flows into normal chat |
 | 🎭 **Personas** | Switch AI personality on demand with `/persona` |
 | 💬 **Conversation History** | Per-user rolling history stored in Redis |
 | 🔁 **Idempotent Webhooks** | Duplicate event protection via Postgres atomic upsert |
 | 🚦 **Rate Limiting** | Per-user burst protection via Redis |
 | 🔒 **Signature Verification** | All inbound webhooks verified with `X-Hub-Signature-256` |
-| ⚡ **Feature Flags** | `ai_chat` flag controls AI responses without a redeploy |
+| ⚡ **Feature Flags** | Per-feature toggles in Postgres — disable any capability without a redeploy |
 | 🏥 **Health Check** | `/healthz` verifies Postgres + Redis connectivity |
 
 ---
@@ -26,8 +31,30 @@
 |---|---|
 | `/persona` | List all available personas |
 | `/persona <name>` | Switch to a different personality |
+| `/image <description>` | Generate an image from a text prompt |
+| `/ocr` *(+ photo attachment)* | Extract all text from the attached photo |
+| `/translate <language> <text>` | Translate text into any language |
+| `/explain <text>` | Get a clear, simple explanation |
+| `/summarize <text>` | Get a concise summary of key points |
+| `/rewrite <text>` | Rewrite text to be clearer and better written |
 
 **Available Personas:** `default` · `teacher` · `friend` · `coder`
+
+> **Voice messages** are handled automatically — no command needed. A spoken question gets a persona-aware AI reply. A spoken `/persona teacher` switches persona just like a typed one.
+
+---
+
+## Feature Flags
+
+Every AI capability is individually gated by a row in the `feature_flags` Postgres table. Set `enabled = false` for any key to disable that feature without redeploying.
+
+| Flag key | Controls |
+|---|---|
+| `ai_chat` | Main AI chat replies + AI text tools (`/explain`, `/summarize`, `/rewrite`) |
+| `image_gen` | `/image` command — Hugging Face generation + Supabase upload |
+| `ocr` | `/ocr` command — Gemini vision text extraction |
+| `translate` | `/translate` command — Groq translation |
+| `voice_input` | Voice message transcription — Groq Whisper |
 
 ---
 
@@ -41,6 +68,9 @@
 | **Cache / History** | Redis via redis.asyncio (Upstash) |
 | **Text AI** | Groq (`openai/gpt-oss-120b`) |
 | **Vision AI** | Google Gemini 2.5 Flash |
+| **Image Generation** | Hugging Face FLUX.1-schnell (Apache 2.0) |
+| **Transcription** | Groq Whisper (`whisper-large-v3-turbo`) |
+| **Image Storage** | Supabase Storage (`generated-images` bucket) |
 | **Hosting** | Render (Web Service) |
 | **Retry Logic** | Tenacity |
 | **Config** | pydantic-settings |
@@ -74,10 +104,15 @@
 │   └── sign_test_payload.py   # Local webhook signature test helper
 │
 ├── services/
-│   ├── event_processor.py     # Central event pipeline (validate → AI → reply)
-│   ├── groq_client.py         # Groq async wrapper with fallback model
-│   ├── gemini_vision.py       # Gemini vision wrapper (single-turn)
-│   ├── messenger_api.py       # Facebook Send API client
+│   ├── event_processor.py     # Central pipeline — command dispatch + voice routing
+│   ├── groq_client.py         # Groq async wrapper (chat + Whisper transcription)
+│   ├── gemini_vision.py       # Gemini vision wrapper (image understanding + OCR)
+│   ├── image_gen.py           # HF FLUX.1-schnell image generation (run_in_executor)
+│   ├── storage.py             # Supabase Storage upload → public URL
+│   ├── ocr.py                 # OCR adapter (reuses gemini_vision with OCR prompt)
+│   ├── translate.py           # Translation via Groq
+│   ├── ai_tools.py            # Explain / summarize / rewrite via Groq
+│   ├── messenger_api.py       # Facebook Send API (text + image URL)
 │   ├── chat_history.py        # Redis conversation history
 │   ├── personas.py            # System prompt definitions per persona
 │   ├── feature_flags.py       # DB-backed feature toggle queries
@@ -133,10 +168,17 @@ Fill in `.env` — see the table below for where to find each value:
 | `FB_PAGE_ID` | ✅ Phase 2 | Your Facebook Page ID |
 | `GROQ_API_KEY` | ✅ Phase 3 | [console.groq.com](https://console.groq.com) |
 | `GEMINI_API_KEY` | ✅ Phase 3 | [aistudio.google.com](https://aistudio.google.com) |
-| `SUPABASE_URL` | Phase 6 | Supabase → Project → Settings → API |
-| `SUPABASE_SERVICE_KEY` | Phase 6 | Supabase → Project → Settings → API |
+| `HF_API_KEY` | ✅ Phase 4 | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
+| `SUPABASE_URL` | ✅ Phase 4 | Supabase → Project → Settings → API |
+| `SUPABASE_SERVICE_KEY` | ✅ Phase 4 | Supabase → Project → Settings → API → `service_role` key |
 
-### 4. Run database migrations
+### 4. Create the Supabase Storage bucket *(Phase 4 prerequisite)*
+
+In the Supabase dashboard: **Storage → New bucket → name: `generated-images` → Public: ✅**
+
+This is a one-time manual step. The `/image` command will fail without it.
+
+### 5. Run database migrations
 
 Creates all required tables. Safe to run multiple times.
 
@@ -144,13 +186,13 @@ Creates all required tables. Safe to run multiple times.
 python scripts/run_migrations.py
 ```
 
-### 5. Start the development server
+### 6. Start the development server
 
 ```bash
 uvicorn main:app --reload
 ```
 
-### 6. Verify connectivity
+### 7. Verify connectivity
 
 ```bash
 curl http://localhost:8000/healthz
@@ -195,8 +237,8 @@ Send the same request twice to confirm idempotency — the second run produces n
 | **1** | ✅ Done | Infrastructure — FastAPI, Postgres pool, Redis client, `/healthz` |
 | **2** | ✅ Done | Facebook Messenger webhook — verification + event receiver + Send API |
 | **3** | ✅ Done | AI chat — Groq text, Gemini vision, personas, rate limiting, history |
-| **4** | 🔜 Next | Image generation, TTS, OCR |
-| **5** | ⬜ Planned | Utility tools — weather, currency, news, prayer times |
+| **4** | ✅ Done | Image generation, OCR, translation, text tools, voice transcription |
+| **5** | 🔜 Next | Utility tools — weather, currency |
 | **6** | ⬜ Planned | Admin panel and feature-flag management UI |
 | **7** | ⬜ Planned | Media downloader |
 | **8** | ⬜ Planned | Hardening — full test suite, observability, SLA-grade reliability |
@@ -218,6 +260,7 @@ FB_VERIFY_TOKEN=
 FB_PAGE_ID=
 GROQ_API_KEY=
 GEMINI_API_KEY=
+HF_API_KEY=
 SUPABASE_URL=
 SUPABASE_SERVICE_KEY=
 ```

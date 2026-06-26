@@ -118,3 +118,30 @@ async def send_text_message(psid: str, text: str) -> None:
         )
 
     logger.info("Reply sent successfully to psid=%s", psid)
+
+
+async def send_image_url(psid: str, image_url: str) -> None:
+    """
+    Send an image to a Messenger user via a hosted URL.
+
+    Messenger's Send API fetches the image from *image_url* itself — raw bytes
+    are never passed through the API.  is_reusable=True lets Messenger cache the
+    attachment so identical images can be re-sent by attachment_id in future.
+
+    Args:
+        psid:      The recipient's Page-Scoped ID.
+        image_url: A publicly accessible URL to a PNG/JPEG image.
+    """
+    payload = {
+        "recipient": {"id": psid},
+        "messaging_type": "RESPONSE",
+        "message": {
+            "attachment": {
+                "type": "image",
+                "payload": {"url": image_url, "is_reusable": True},
+            }
+        },
+    }
+    logger.info("Sending image to psid=%s url=%s", psid, image_url)
+    await _post_message(settings.fb_page_id, settings.fb_page_access_token, payload)
+    logger.info("Image sent successfully to psid=%s", psid)

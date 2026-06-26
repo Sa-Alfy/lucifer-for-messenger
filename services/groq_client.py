@@ -125,3 +125,43 @@ async def get_groq_reply(
         logger.debug("Groq reply received via fallback model.")
 
     return resp.choices[0].message.content
+
+
+# ── Transcription ─────────────────────────────────────────────────────────────
+
+TRANSCRIPTION_MODEL = "whisper-large-v3-turbo"
+
+
+async def transcribe_audio(audio_bytes: bytes, filename: str = "voice.mp4") -> str:
+    """
+    Transcribe audio bytes to text using Groq Whisper.
+
+    Reuses the module-level AsyncGroq client singleton — no extra client is
+    created.  The filename extension hints the codec to Groq; Messenger voice
+    messages arrive as .mp4/AAC.
+
+    Args:
+        audio_bytes: Raw audio bytes downloaded from Messenger.
+        filename:    Filename passed to the API as a content-type hint.
+                     Defaults to "voice.mp4" (Messenger's format).
+
+    Returns:
+        The transcribed text string.
+
+    Raises:
+        Any exception from Groq — callers are expected to catch and convert
+        to a user-facing error message.
+    """
+    logger.debug(
+        "Groq transcription started: model=%s bytes=%d", TRANSCRIPTION_MODEL, len(audio_bytes)
+    )
+    result = await _get_client().audio.transcriptions.create(
+        file=(filename, audio_bytes),
+        model=TRANSCRIPTION_MODEL,
+        response_format="text",
+    )
+    # Groq may return either a plain str (response_format="text") or a
+    # Transcription object — handle both to be safe.
+    text = result if isinstance(result, str) else result.text
+    logger.debug("Groq transcription complete: chars=%d", len(text))
+    return text
