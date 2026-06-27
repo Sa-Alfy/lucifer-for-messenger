@@ -142,3 +142,9 @@ $RECYCLE.BIN/
 
 # Skills lock file (auto-generated, not needed in source control)
 skills-lock.json
+
+# Graphify knowledge-graph output (generated artefacts, not source)
+graphify-out/
+
+# Leftover Telegram bot folder (different project, not part of this repo)
+Telegrame_Bot-Lucifer--main/

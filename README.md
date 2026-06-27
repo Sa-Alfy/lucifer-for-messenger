@@ -1,24 +1,29 @@
 # Lucifer — Facebook Messenger AI Assistant
 
-> A production-grade AI assistant bot for Facebook Messenger, built with FastAPI, Groq (text + transcription + translation), Gemini (vision + OCR), and Hugging Face FLUX (image generation). Deployed on Render with Neon Postgres and Upstash Redis.
+> A production-grade AI assistant bot for Facebook Messenger, built with FastAPI, Groq (text + transcription + translation + tool calling), Gemini (vision + OCR), and Hugging Face FLUX (image generation). Deployed on Render with Neon Postgres and Upstash Redis.
 
 ---
 
-## Features (Current — Phase 4)
+## Features (Current — Phase 6b)
 
 | Capability | Details |
 |---|---|
 | 🤖 **AI Chat** | Powered by Groq (`openai/gpt-oss-120b`, fallback: `gpt-oss-20b`) |
+| 🛠️ **Tool Calling** | Groq decides when to call weather, currency, image gen, or translate tools — no extra AI round-trip |
 | 🖼️ **Image Understanding** | Send any photo — Gemini 2.5 Flash describes and responds to it |
-| 🎨 **Image Generation** | `/image <prompt>` — generates via HF FLUX.1-schnell, hosted on Supabase |
+| 🎨 **Image Generation** | `/image <prompt>` or natural language — generates via HF FLUX.1-schnell, hosted on Supabase |
 | 🔍 **OCR** | `/ocr` + a photo attachment — extracts literal text via Gemini vision |
-| 🌐 **Translation** | `/translate <language> <text>` — powered by Groq |
+| 🌐 **Translation** | `/translate <language> <text>` or natural language — powered by Groq |
 | 💡 **AI Text Tools** | `/explain`, `/summarize`, `/rewrite` — via Groq |
 | 🎙️ **Voice Messages** | Voice input auto-transcribed via Groq Whisper; flows into normal chat |
 | 🎭 **Personas** | Switch AI personality on demand with `/persona` |
+| 🌦️ **Weather Summary** | `/weather <city>` or natural language — live data via OpenWeatherMap (cached for 10m in Redis) |
+| 💱 **Currency Exchange** | `/currency <amount> <from> <to>` or natural language — rates via Frankfurter (ECB reference) |
+| 📋 **Help Menu** | `/help` or `/menu` or `help` — interactive Quick Reply menu guides non-technical users |
+| 🛡️ **Moderation & Safety** | Silent drops for blocked users; burst rate limits (8 req/60s) via Redis |
+| 🔑 **Messenger Admin** | In-chat `/admin` panel with Quick Replies for stats, block/unblock, and live database feature flag toggles |
 | 💬 **Conversation History** | Per-user rolling history stored in Redis |
 | 🔁 **Idempotent Webhooks** | Duplicate event protection via Postgres atomic upsert |
-| 🚦 **Rate Limiting** | Per-user burst protection via Redis |
 | 🔒 **Signature Verification** | All inbound webhooks verified with `X-Hub-Signature-256` |
 | ⚡ **Feature Flags** | Per-feature toggles in Postgres — disable any capability without a redeploy |
 | 🏥 **Health Check** | `/healthz` verifies Postgres + Redis connectivity |
@@ -37,24 +42,36 @@
 | `/explain <text>` | Get a clear, simple explanation |
 | `/summarize <text>` | Get a concise summary of key points |
 | `/rewrite <text>` | Rewrite text to be clearer and better written |
+| `/weather <city>` | Look up live weather conditions (cached) |
+| `/currency <amount> <from> <to>` | Convert currency using ECB reference rates |
+| `/help` *(or* `/menu`*, or* `help`*)* | Open the interactive Quick Reply help menu |
+| `/admin claim <secret>` | Claim admin access using the bootstrap secret |
+| `/admin` | Open the interactive admin console (Admins only) |
+| `/admin stats` | View system stats (Admins only) |
+| `/admin block <psid>` | Block a user by Page-Scoped ID (Admins only) |
+| `/admin unblock <psid>` | Unblock a user by Page-Scoped ID (Admins only) |
 
 **Available Personas:** `default` · `teacher` · `friend` · `coder`
 
 > **Voice messages** are handled automatically — no command needed. A spoken question gets a persona-aware AI reply. A spoken `/persona teacher` switches persona just like a typed one.
 
+> **Natural language** — you can ask "What's the weather in Paris?" or "Convert 100 USD to EUR" in plain English and the bot's tool-calling engine will handle it without you needing a slash command.
+
 ---
 
 ## Feature Flags
 
-Every AI capability is individually gated by a row in the `feature_flags` Postgres table. Set `enabled = false` for any key to disable that feature without redeploying.
+Every capability is individually gated by a row in the `feature_flags` Postgres table. Set `enabled = false` for any key to disable that feature without redeploying.
 
 | Flag key | Controls |
 |---|---|
 | `ai_chat` | Main AI chat replies + AI text tools (`/explain`, `/summarize`, `/rewrite`) |
-| `image_gen` | `/image` command — Hugging Face generation + Supabase upload |
+| `image_gen` | `/image` command + image gen tool call — Hugging Face generation + Supabase upload |
 | `ocr` | `/ocr` command — Gemini vision text extraction |
-| `translate` | `/translate` command — Groq translation |
+| `translate` | `/translate` command + translate tool call — Groq translation |
 | `voice_input` | Voice message transcription — Groq Whisper |
+| `weather` | `/weather` command + weather tool call |
+| `currency` | `/currency` command + currency tool call |
 
 ---
 
@@ -66,7 +83,7 @@ Every AI capability is individually gated by a row in the `feature_flags` Postgr
 | **Web Framework** | FastAPI + Uvicorn |
 | **Database** | PostgreSQL via asyncpg (Neon) |
 | **Cache / History** | Redis via redis.asyncio (Upstash) |
-| **Text AI** | Groq (`openai/gpt-oss-120b`) |
+| **Text AI** | Groq (`openai/gpt-oss-120b`) with Tool Calling |
 | **Vision AI** | Google Gemini 2.5 Flash |
 | **Image Generation** | Hugging Face FLUX.1-schnell (Apache 2.0) |
 | **Transcription** | Groq Whisper (`whisper-large-v3-turbo`) |
@@ -97,22 +114,26 @@ Every AI capability is individually gated by a row in the `feature_flags` Postgr
 │   └── webhook.py             # GET (verification) + POST (events) /webhook
 │
 ├── migrations/
-│   └── 0001_init.sql          # Schema: users, feature_flags, processed_events
+│   ├── 0001_init.sql          # Schema: users, feature_flags, processed_events
+│   └── 0002_admin.sql         # Schema updates: users.is_admin
 │
 ├── scripts/
 │   ├── run_migrations.py      # Safe idempotent migration runner
 │   └── sign_test_payload.py   # Local webhook signature test helper
 │
 ├── services/
-│   ├── event_processor.py     # Central pipeline — command dispatch + voice routing
-│   ├── groq_client.py         # Groq async wrapper (chat + Whisper transcription)
+│   ├── event_processor.py     # Central pipeline — command dispatch, tool calling, HELP_ menu, voice routing
+│   ├── groq_client.py         # Groq async wrapper (chat with tool calling + Whisper transcription)
 │   ├── gemini_vision.py       # Gemini vision wrapper (image understanding + OCR)
 │   ├── image_gen.py           # HF FLUX.1-schnell image generation (run_in_executor)
 │   ├── storage.py             # Supabase Storage upload → public URL
 │   ├── ocr.py                 # OCR adapter (reuses gemini_vision with OCR prompt)
 │   ├── translate.py           # Translation via Groq
 │   ├── ai_tools.py            # Explain / summarize / rewrite via Groq
-│   ├── messenger_api.py       # Facebook Send API (text + image URL)
+│   ├── weather.py             # OpenWeatherMap API + Redis caching
+│   ├── currency.py            # Frankfurter API converter
+│   ├── admin.py               # Claims, stats, flags, user blocks
+│   ├── messenger_api.py       # Facebook Send API (text, image, quick replies)
 │   ├── chat_history.py        # Redis conversation history
 │   ├── personas.py            # System prompt definitions per persona
 │   ├── feature_flags.py       # DB-backed feature toggle queries
@@ -120,9 +141,18 @@ Every AI capability is individually gated by a row in the `feature_flags` Postgr
 │   └── rate_limit.py          # Per-user rate limit (Redis)
 │
 ├── utils/
-│   └── logger.py              # Structured stdout logger
+│   ├── logger.py              # Structured stdout logger
+│   └── security.py            # Signature verification (HMAC-SHA256)
 │
 └── tests/
+    ├── conftest.py            # Shared async fakes (FakeRedis, FakePool, FakeConn, etc.)
+    ├── test_phase1_infra.py   # Infrastructure — Postgres pool, Redis client, /healthz
+    ├── test_phase2_webhook.py # Webhook verification + event receiver
+    ├── test_phase3_ai_core.py # AI chat — Groq, Gemini vision, personas, rate limiting, history
+    ├── test_phase4_ai_tools.py# Image gen, OCR, translation, text tools, voice transcription
+    ├── test_phase5_utilities.py# Weather, currency utilities
+    ├── test_admin_phase6a.py  # Admin panel — claims, toggles, stats, blocks
+    ├── test_phase6b_ux.py     # Phase 6b — tool calling dispatch, help menu, quick reply routing
     └── fixtures/
         └── sample_message_event.json
 ```
@@ -171,6 +201,8 @@ Fill in `.env` — see the table below for where to find each value:
 | `HF_API_KEY` | ✅ Phase 4 | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
 | `SUPABASE_URL` | ✅ Phase 4 | Supabase → Project → Settings → API |
 | `SUPABASE_SERVICE_KEY` | ✅ Phase 4 | Supabase → Project → Settings → API → `service_role` key |
+| `OPENWEATHER_API_KEY` | ✅ Phase 5 | [openweathermap.org](https://openweathermap.org/api) |
+| `ADMIN_BOOTSTRAP_SECRET` | ✅ Phase 6a | Any secure random string of your choice |
 
 ### 4. Create the Supabase Storage bucket *(Phase 4 prerequisite)*
 
@@ -230,6 +262,14 @@ Send the same request twice to confirm idempotency — the second run produces n
 
 ---
 
+## Running the Test Suite
+
+```bash
+pytest tests/ -v
+```
+
+---
+
 ## Development Roadmap
 
 | Phase | Status | Content |
@@ -238,8 +278,9 @@ Send the same request twice to confirm idempotency — the second run produces n
 | **2** | ✅ Done | Facebook Messenger webhook — verification + event receiver + Send API |
 | **3** | ✅ Done | AI chat — Groq text, Gemini vision, personas, rate limiting, history |
 | **4** | ✅ Done | Image generation, OCR, translation, text tools, voice transcription |
-| **5** | 🔜 Next | Utility tools — weather, currency |
-| **6** | ⬜ Planned | Admin panel and feature-flag management UI |
+| **5** | ✅ Done | Utility tools — weather, currency |
+| **6a** | ✅ Done | Admin panel, feature-flag toggling, safety blocks/unblocks, claim rate limits |
+| **6b** | ✅ Done | Tool calling (weather, currency, image gen, translate) + `/help` Quick Reply menu |
 | **7** | ⬜ Planned | Media downloader |
 | **8** | ⬜ Planned | Hardening — full test suite, observability, SLA-grade reliability |
 
@@ -263,6 +304,8 @@ GEMINI_API_KEY=
 HF_API_KEY=
 SUPABASE_URL=
 SUPABASE_SERVICE_KEY=
+OPENWEATHER_API_KEY=
+ADMIN_BOOTSTRAP_SECRET=
 ```
 
 ---
