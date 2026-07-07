@@ -1,0 +1,53 @@
+# Agent ignore — paths the AI should not scan or read.
+# Uses gitignore-style patterns.
+
+# ── Generated / tooling noise ────────────────────────────────────────────────
+
+**/graphify-out/
+**/.agents/
+skills-lock.json
+antigravity.ignore
+graphify_help.txt
+
+# Leftover unrelated project (not part of this repo)
+**/Telegrame_Bot-Lucifer--main/
+
+# ── Secrets ──────────────────────────────────────────────────────────────────
+
+.env
+.env.*
+!.env.example
+
+# ── Python / build / caches ──────────────────────────────────────────────────
+
+**/__pycache__/
+**/.venv/
+**/venv/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.pytype/
+**/.pyre/
+**/*.egg-info/
+**/dist/
+**/build/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# ── Logs / temp / OS junk ────────────────────────────────────────────────────
+
+**/*.log
+**/*.tmp
+**/*.bak
+**/*.swp
+**/logs/
+**/tmp/
+**/temp/
+**/.DS_Store
+**/Thumbs.db
+
+# ── VCS / IDE ───────────────────────────────────────────────────────────────
+
+**/.git/
+**/.vscode/
+**/.idea/

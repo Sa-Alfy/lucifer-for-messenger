@@ -30,9 +30,19 @@ class Settings(BaseSettings):
     hf_api_key: str = ""
     gemini_api_key: str = ""
 
+    # ── Phase 5: Utilities ──────────────────────────────────────
+    openweather_api_key: str = ""
+
     # ── Phase 6: Supabase management API ────────────────────────
     supabase_url: str = ""
     supabase_service_key: str = ""
+
+    # ── Phase 6a: Admin bootstrap ───────────────────────────────
+    admin_bootstrap_secret: str = ""
+
+    # ── Phase 6b: Web admin dashboard ───────────────────────────
+    admin_dashboard_password: str = ""
+    admin_session_secret: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 

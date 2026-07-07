@@ -1,0 +1,53 @@
+﻿# Cursor ignore — blocks indexing, @ mentions, Tab, and Agent file reads.
+# Uses gitignore-style patterns. See: https://cursor.com/docs/reference/ignore-file
+
+# ── Generated / tooling noise ────────────────────────────────────────────────
+
+graphify-out/
+.agents/
+skills-lock.json
+antigravity.ignore
+graphify_help.txt
+
+# Leftover unrelated project (not part of this repo)
+Telegrame_Bot-Lucifer--main/
+
+# ── Secrets ──────────────────────────────────────────────────────────────────
+
+.env
+.env.*
+!.env.example
+
+# ── Python / build / caches ──────────────────────────────────────────────────
+
+__pycache__/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.pyre/
+*.egg-info/
+dist/
+build/
+*.pyc
+*.pyo
+*.pyd
+
+# ── Logs / temp / OS junk ────────────────────────────────────────────────────
+
+*.log
+*.tmp
+*.bak
+*.swp
+logs/
+tmp/
+temp/
+.DS_Store
+Thumbs.db
+
+# ── VCS / IDE ───────────────────────────────────────────────────────────────
+
+.git/
+.vscode/
+.idea/

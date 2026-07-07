@@ -17,6 +17,7 @@ from fastapi.responses import JSONResponse
 from config import settings
 from db.postgres import init_pool, close_pool, ping as pg_ping
 from db.redis_client import init_redis, close_redis, ping as redis_ping
+from handlers.admin_dashboard import router as admin_dashboard_router
 from handlers.webhook import router as webhook_router
 from utils.logger import get_logger
 
@@ -64,6 +65,9 @@ app = FastAPI(
 # ── Routers ───────────────────────────────────────────────────────
 # Phase 2: Messenger webhook (GET verification + POST event receiver)
 app.include_router(webhook_router)
+
+# Phase 6b: Web admin dashboard (/admin/*)
+app.include_router(admin_dashboard_router)
 
 
 # ── Health check ─────────────────────────────────────────────────

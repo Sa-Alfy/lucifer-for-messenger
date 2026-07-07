@@ -40,8 +40,12 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
-      # ── Phase 6: Supabase management API ──────────────────────
+      # ── Phase 4: Supabase Storage ─────────────────────────────
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
+        sync: false
+
+      # ── Phase 5: Utility tools ────────────────────────────────
+      - key: OPENWEATHER_API_KEY
         sync: false

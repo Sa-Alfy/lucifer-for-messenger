@@ -35,6 +35,9 @@ def _configure_root() -> None:
     root.setLevel(level)
     root.addHandler(handler)
 
+    # httpx logs full request URLs at INFO, which can include API keys in query params.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
     _configured = True
 
 

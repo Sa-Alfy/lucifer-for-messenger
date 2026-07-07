@@ -11,6 +11,9 @@ JSON parsing. Re-serialising a parsed dict can produce different byte sequences
 
 import hashlib
 import hmac
+import time
+
+SESSION_TTL_SECONDS = 24 * 60 * 60
 
 
 def verify_fb_signature(
@@ -42,3 +45,21 @@ def verify_fb_signature(
 
     # constant-time comparison — never use == here
     return hmac.compare_digest(expected, provided)
+
+
+def create_session_token(secret: str) -> str:
+    expiry = int(time.time()) + SESSION_TTL_SECONDS
+    signature = hmac.new(secret.encode(), str(expiry).encode(), hashlib.sha256).hexdigest()
+    return f"{expiry}.{signature}"
+
+
+def verify_session_token(token: str, secret: str) -> bool:
+    try:
+        expiry_str, signature = token.split(".", 1)
+        expiry = int(expiry_str)
+    except (ValueError, AttributeError):
+        return False
+    if expiry < int(time.time()):
+        return False
+    expected = hmac.new(secret.encode(), expiry_str.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature)

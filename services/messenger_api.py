@@ -120,6 +120,25 @@ async def send_text_message(psid: str, text: str) -> None:
     logger.info("Reply sent successfully to psid=%s", psid)
 
 
+async def send_quick_replies(psid: str, text: str, options: list[tuple[str, str]]) -> None:
+    """
+    Send a text message with tappable quick-reply buttons.
+
+    Titles are truncated to 20 characters — Messenger truncates longer labels.
+    At most 13 quick replies are sent (Messenger's hard cap per message).
+    """
+    quick_replies = [
+        {"content_type": "text", "title": title[:20], "payload": payload}
+        for title, payload in options[:13]
+    ]
+    payload = {
+        "recipient": {"id": psid},
+        "messaging_type": "RESPONSE",
+        "message": {"text": text, "quick_replies": quick_replies},
+    }
+    await _post_message(settings.fb_page_id, settings.fb_page_access_token, payload)
+
+
 async def send_image_url(psid: str, image_url: str) -> None:
     """
     Send an image to a Messenger user via a hosted URL.
@@ -145,3 +164,30 @@ async def send_image_url(psid: str, image_url: str) -> None:
     logger.info("Sending image to psid=%s url=%s", psid, image_url)
     await _post_message(settings.fb_page_id, settings.fb_page_access_token, payload)
     logger.info("Image sent successfully to psid=%s", psid)
+
+
+async def send_video_url(psid: str, video_url: str) -> None:
+    """
+    Send a video to a Messenger user via a hosted URL.
+
+    Messenger's Send API fetches the video from *video_url* itself — raw bytes
+    are never passed through the API.  is_reusable=True lets Messenger cache the
+    attachment so identical videos can be re-sent by attachment_id in future.
+
+    Args:
+        psid:      The recipient's Page-Scoped ID.
+        video_url: A publicly accessible URL to an MP4 video.
+    """
+    payload = {
+        "recipient": {"id": psid},
+        "messaging_type": "RESPONSE",
+        "message": {
+            "attachment": {
+                "type": "video",
+                "payload": {"url": video_url, "is_reusable": True},
+            }
+        },
+    }
+    logger.info("Sending video to psid=%s url=%s", psid, video_url)
+    await _post_message(settings.fb_page_id, settings.fb_page_access_token, payload)
+    logger.info("Video sent successfully to psid=%s", psid)
