@@ -281,7 +281,7 @@ pytest tests/ -v
 | **5** | ✅ Done | Utility tools — weather, currency |
 | **6a** | ✅ Done | Admin panel, feature-flag toggling, safety blocks/unblocks, claim rate limits |
 | **6b** | ✅ Done | Tool calling (weather, currency, image gen, translate) + `/help` Quick Reply menu |
-| **7** | ⬜ Planned | Media downloader |
+| **7** | ✅ Done | Media downloader |
 | **8** | ⬜ Planned | Hardening — full test suite, observability, SLA-grade reliability |
 
 ---
