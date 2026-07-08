@@ -14,7 +14,7 @@
           },
           "timestamp": 1750000000000,
           "message": {
-            "mid": "m_ABC123testmid_Phase2Fixture",
+            "mid": "mid_test_message_1",
             "text": "Hello, Lucifer!"
           }
         }

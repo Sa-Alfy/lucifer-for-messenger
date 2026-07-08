@@ -2,7 +2,7 @@
 services/feature_flags.py — Postgres-backed feature flag lookup.
 
 Why direct Postgres and not a Redis cache?
-  At Phase 3–7 traffic levels (single-page bot), the query is a primary-key
+  At current traffic levels, the query is a primary-key
   lookup that Postgres serves in under a millisecond.  Adding a Redis cache
   layer would mean managing invalidation logic with zero observable benefit.
   Cache it when metrics show it's actually a bottleneck — not before.

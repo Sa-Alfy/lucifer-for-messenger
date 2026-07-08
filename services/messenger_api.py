@@ -14,7 +14,7 @@ Long-text handling:
     another. The order is guaranteed because we await each send in a loop.
 
 messaging_type is always RESPONSE for this project.  Do not introduce
-MESSAGE_TAG or UPDATE without explicit cross-phase scoping.
+MESSAGE_TAG or UPDATE without explicit architectural scoping.
 """
 
 import httpx
@@ -145,7 +145,8 @@ async def send_image_url(psid: str, image_url: str) -> None:
 
     Messenger's Send API fetches the image from *image_url* itself — raw bytes
     are never passed through the API.  is_reusable=True lets Messenger cache the
-    attachment so identical images can be re-sent by attachment_id in future.
+    attachment so Messenger can serve the cached copy for subsequent sends
+    without re-fetching the original URL.
 
     Args:
         psid:      The recipient's Page-Scoped ID.
@@ -172,7 +173,8 @@ async def send_video_url(psid: str, video_url: str) -> None:
 
     Messenger's Send API fetches the video from *video_url* itself — raw bytes
     are never passed through the API.  is_reusable=True lets Messenger cache the
-    attachment so identical videos can be re-sent by attachment_id in future.
+    attachment so Messenger can serve the cached copy for subsequent sends
+    without re-fetching the original URL.
 
     Args:
         psid:      The recipient's Page-Scoped ID.

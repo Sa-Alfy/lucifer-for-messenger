@@ -8,7 +8,7 @@ services:
     healthCheckPath: /healthz
 
     envVars:
-      # ── Phase 1: Required ──────────────────────────────────────
+      # ── Core Databases ────────────────────────────────────────
       - key: DATABASE_URL
         sync: false           # set manually in Render dashboard
       - key: REDIS_URL
@@ -22,7 +22,7 @@ services:
       - key: PORT
         value: "8000"
 
-      # ── Phase 2: Facebook Messenger ───────────────────────────
+      # ── Facebook Messenger ────────────────────────────────────
       - key: FB_PAGE_ACCESS_TOKEN
         sync: false
       - key: FB_APP_SECRET
@@ -32,7 +32,7 @@ services:
       - key: FB_PAGE_ID
         sync: false
 
-      # ── Phase 3+: AI Providers ────────────────────────────────
+      # ── AI Providers (Groq, Gemini, Hugging Face) ─────────────
       - key: GROQ_API_KEY
         sync: false
       - key: HF_API_KEY
@@ -40,12 +40,24 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
-      # ── Phase 4: Supabase Storage ─────────────────────────────
+      # ── Supabase Image & Video Storage ────────────────────────
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
         sync: false
 
-      # ── Phase 5: Utility tools ────────────────────────────────
+      # ── Utilities (OpenWeatherMap, etc.) ──────────────────────
       - key: OPENWEATHER_API_KEY
         sync: false
+
+      # ── Admin Panel ───────────────────────────────────────────
+      - key: ADMIN_BOOTSTRAP_SECRET
+        sync: false    # remove from here once the first admin has been claimed
+      - key: ADMIN_DASHBOARD_PASSWORD
+        sync: false
+      - key: ADMIN_SESSION_SECRET
+        sync: false
+
+      # ── Observability & Monitoring ────────────────────────────
+      - key: SENTRY_DSN
+        sync: false    # optional; leave empty to disable Sentry entirely

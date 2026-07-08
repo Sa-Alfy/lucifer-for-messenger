@@ -5,7 +5,7 @@ Facebook Messenger enforces a 24-hour window: a page may only send standard
 messages to a user within 24 hours of the user's last inbound message.
 Attempting to send outside that window fails with a specific API error.
 
-This module tracks per-user activity in Redis so Phase 3+ code can check
+This module tracks per-user activity in Redis so other components can check
 before sending proactive or cross-window messages.
 
 Key design choices:
@@ -38,9 +38,8 @@ async def is_within_window(redis, psid: str) -> bool:
     """
     Return True if the user sent a message within the last 24 hours.
 
-    Not called anywhere in Phase 2 — the echo bot always replies immediately
-    within the window. Exposed here so Phase 3+ proactive / scheduled logic
-    can check window status before attempting sends.
+    Exposed here so proactive or scheduled logic can check window status
+    before attempting sends.
 
     Args:
         redis: The initialised redis.asyncio.Redis client.

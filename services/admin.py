@@ -1,5 +1,5 @@
 """
-services/admin.py — Messenger-native admin controls (Phase 6a).
+services/admin.py — Messenger-native admin controls.
 
 Claim flow, admin authorization, feature-flag toggling, user blocking,
 and quick stats for in-chat admin commands and quick replies.

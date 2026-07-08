@@ -1,5 +1,5 @@
 """
-services/ocr.py — OCR via Gemini vision (Phase 3 reuse).
+services/ocr.py — OCR via Gemini vision.
 
 No new vision dependency is introduced here.  This module is a thin adapter
 that calls the existing describe_image function with an OCR-specific system
@@ -32,7 +32,7 @@ async def extract_text(image_bytes: bytes, mime_type: str) -> str:
     """
     Extract text from an image using Gemini vision.
 
-    Reuses the Phase 3 describe_image function with an OCR-specific system
+    Reuses the describe_image function with an OCR-specific system
     prompt.  No new AI dependency is added.
 
     Args:

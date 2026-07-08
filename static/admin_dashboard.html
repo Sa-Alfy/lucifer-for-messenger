@@ -99,9 +99,28 @@
       cursor: pointer;
     }
     .pagination button:disabled { opacity: 0.4; cursor: default; }
+    /* yt-dlp staleness banner */
+    .ytdlp-banner {
+      display: none;
+      background: #7c5500;
+      border: 1px solid #b07800;
+      border-radius: 6px;
+      padding: 0.65rem 1rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.9rem;
+      color: #ffe5a0;
+    }
+    .ytdlp-banner.visible { display: block; }
+    .ytdlp-banner strong { color: #ffd060; }
   </style>
 </head>
 <body>
+  <!-- yt-dlp staleness warning banner (hidden until JS confirms stale) -->
+  <div id="ytdlp-banner" class="ytdlp-banner" role="alert">
+    ⚠️ <strong>yt-dlp may be outdated.</strong>
+    <span id="ytdlp-banner-detail"></span>
+    Redeploy the service to update it.
+  </div>
   <h1>Lucifer — Admin Dashboard</h1>
   <nav>
     <button class="tab-btn active" data-panel="flags">Flags</button>
@@ -259,6 +278,22 @@
     document.getElementById('blocked-only').addEventListener('change', () => { currentPage = 1; loadUsers(); });
 
     loadFlags();
+
+    // check yt-dlp staleness on page load and show banner if needed
+    async function checkYtdlpFreshness() {
+      const data = await api('/admin/api/ytdlp');
+      if (!data) return;
+      const banner = document.getElementById('ytdlp-banner');
+      const detail = document.getElementById('ytdlp-banner-detail');
+      if (data.is_stale) {
+        detail.textContent = `Version ${data.version} is ${data.age_days} days old (threshold: ${data.stale_threshold_days}d). `;
+        banner.classList.add('visible');
+      } else if (data.error) {
+        detail.textContent = `${data.error} `;
+        banner.classList.add('visible');
+      }
+    }
+    checkYtdlpFreshness();
   </script>
 </body>
 </html>

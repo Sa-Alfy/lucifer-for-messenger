@@ -1,5 +1,5 @@
 """
-tests/test_phase3_ai_core.py — Phase 3: AI Chat Core.
+tests/test_phase3_ai_core.py — AI Chat Core.
 
 Tests:
   - Rate limiting (Redis-based, 8 requests per 60s)

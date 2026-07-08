@@ -1,5 +1,5 @@
 """
-tests/test_phase2_webhook.py — Phase 2: Messenger Webhook Core.
+tests/test_phase2_webhook.py — Messenger Webhook Core.
 
 Tests:
   - GET /webhook: Facebook hub challenge verification

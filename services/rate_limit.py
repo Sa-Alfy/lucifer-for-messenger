@@ -11,8 +11,13 @@ Algorithm:
   window (not a strict sliding window), but it is simple, O(1) in Redis, and
   accurate enough for burst protection at this scale.
 
-  True sliding window (with sorted-set timestamps) is available if needed
-  later — flag it then, not now.
+  A true sliding window (sorted-set timestamps in Redis) would eliminate the
+  burst ambiguity at window boundaries, at the cost of 2–3 Redis operations
+  per request and more key-management code.  The fixed-window approach is
+  sufficient for single-page-bot traffic: the worst-case burst a user can
+  achieve is 2× the limit in the first second of a new window, which is an
+  acceptable tradeoff at this scale.  Revisit if quota overage on the Groq
+  side becomes a real operational problem.
 """
 
 from utils.logger import get_logger

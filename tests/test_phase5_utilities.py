@@ -1,5 +1,5 @@
 """
-tests/test_phase5_utilities.py — Phase 5: Utility Tools.
+tests/test_phase5_utilities.py — Utility Tools.
 
 Tests:
   - Weather lookup (cache hit, cache miss, OpenWeather API call, 404 error, missing API key)

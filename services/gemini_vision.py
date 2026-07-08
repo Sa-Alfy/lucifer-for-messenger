@@ -4,9 +4,9 @@ services/gemini_vision.py — Google Gemini vision wrapper for photo understandi
 Uses the stable generate_content API (client.aio.models.generate_content),
 NOT the beta Interactions API (client.interactions.create).
 
-Scope for this phase: single-turn only.  Image replies are NOT stored in Redis
+Scope: single-turn only. Image replies are NOT stored in Redis
 chat history — each photo is understood in isolation with no prior context.
-This is intentional and documented; the history integration is Phase 4 work.
+This is intentional; vision requests are single-turn, while history tracks text/replies.
 
 The system instruction is passed via GenerateContentConfig so it is cleanly
 separated from the user content (not folded into the messages list).

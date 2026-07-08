@@ -1,5 +1,5 @@
 """
-services/downloader.py — yt-dlp video download wrapper (Phase 7).
+services/downloader.py — yt-dlp video download wrapper.
 
 Supported platforms (deliberate, narrow scope):
   TikTok, Twitter/X, Instagram, Facebook, Reddit.

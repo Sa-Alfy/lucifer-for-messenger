@@ -1,5 +1,4 @@
--- migrations/0001_init.sql
--- Phase 1: core tables only.
+-- Core tables initialization.
 -- All statements are idempotent — safe to run multiple times.
 
 CREATE TABLE IF NOT EXISTS users (

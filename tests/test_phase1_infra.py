@@ -1,5 +1,5 @@
 """
-tests/test_phase1_infra.py — Phase 1: Infrastructure Foundation.
+tests/test_phase1_infra.py — Infrastructure Foundation.
 
 Tests:
   - config: env vars load correctly via pydantic-settings

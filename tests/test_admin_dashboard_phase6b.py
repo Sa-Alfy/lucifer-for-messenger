@@ -1,5 +1,5 @@
 """
-Phase 6b web admin dashboard — self-verify checklist tests.
+Web admin dashboard — self-verify checklist tests.
 """
 
 import logging

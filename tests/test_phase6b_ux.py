@@ -1,5 +1,5 @@
 """
-tests/test_phase6b_ux.py — Phase 6b: Hybrid UX (Tool Calling & Menus).
+tests/test_phase6b_ux.py — Hybrid UX (Tool Calling & Menus).
 
 Tests:
   - Help Menu command triggers send_quick_replies with 8 options.

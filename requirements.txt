@@ -12,3 +12,4 @@ google-genai
 huggingface_hub
 Pillow
 yt-dlp
+sentry-sdk[fastapi]

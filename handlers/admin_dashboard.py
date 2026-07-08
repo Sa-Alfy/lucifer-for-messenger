@@ -1,5 +1,5 @@
 """
-handlers/admin_dashboard.py — Web admin dashboard (Phase 6b).
+handlers/admin_dashboard.py — Web admin dashboard.
 
 Session-authenticated HTTP routes for feature flags, stats, and user moderation.
 """
@@ -14,6 +14,7 @@ from config import settings
 from db.postgres import get_pool
 from db.redis_client import get_redis
 from services.admin import get_stats_dict, list_flags, list_users, set_block_status, toggle_flag
+from services.ytdlp_freshness import get_ytdlp_info
 from utils.security import SESSION_TTL_SECONDS, create_session_token, verify_session_token
 
 router = APIRouter()
@@ -138,3 +139,14 @@ async def api_unblock_user(psid: str):
     if not await set_block_status(get_pool(), psid, False):
         raise HTTPException(status_code=404, detail="User not found")
     return {"psid": psid, "is_blocked": False}
+
+
+@router.get("/admin/api/ytdlp", dependencies=[Depends(require_admin_session_api)])
+async def api_ytdlp_info():
+    """
+    Report the installed yt-dlp version, its age, and staleness status.
+
+    This endpoint is read-only.  It never runs pip install or any subprocess.
+    Use Render's redeploy button to update yt-dlp — that is the correct path.
+    """
+    return get_ytdlp_info()

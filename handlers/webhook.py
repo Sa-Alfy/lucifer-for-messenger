@@ -15,22 +15,33 @@ Facebook retries any non-200 response and any request that times out.
 Returning 200 quickly (step 4) before slow work (step 5) prevents spurious
 retries that would re-deliver the same events.
 
+Background tasks scheduler:
+  We schedule tasks via services.task_registry.register_task(), which wraps
+  asyncio.create_task() and keeps a registry of in-flight tasks. This allows
+  lifespan shutdown to wait for tasks to finish before closing connection pools.
+  Semantics are identical to BackgroundTasks — the 200 is returned immediately.
+
+Sentry capture in _safe_process:
+  Unhandled exceptions are logged and reported to Sentry when SENTRY_DSN is
+  configured. Local variables are excluded from the Sentry payload to avoid PII leak.
+
 Note on BackgroundTasks durability: if the process restarts between accepting
-the 200 and the background task completing, that event is lost.  This is an
-accepted trade-off for Phase 2 scale.  Flag in Phase 8 if a durable queue
-becomes necessary — do not build one now.
+the 200 and the background task completing, that event is lost. This is an
+accepted trade-off for this webhook architecture. Graceful-shutdown draining protects
+tasks during clean deployments, though hard crashes still lose in-flight work.
 """
 
 import json
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Request, Response
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import PlainTextResponse
 
 from config import settings
 from db.postgres import get_pool
 from db.redis_client import get_redis
 from services.event_processor import process_messaging_event
+from services.task_registry import register_task
 from utils.security import verify_fb_signature
 
 logger = logging.getLogger(__name__)
@@ -74,7 +85,6 @@ async def verify_webhook(request: Request) -> PlainTextResponse:
 @router.post("/webhook")
 async def receive_webhook(
     request: Request,
-    background_tasks: BackgroundTasks,
 ) -> Response:
     """
     Receive and queue inbound Messenger events for background processing.
@@ -85,6 +95,9 @@ async def receive_webhook(
 
     Returns 403 (without touching the database) if the signature is missing
     or does not match.
+
+    Tasks are registered via task_registry.register_task() to enable graceful
+    shutdown draining.
     """
     # Step 1 — capture raw bytes (before any parsing)
     raw_body = await request.body()
@@ -99,11 +112,11 @@ async def receive_webhook(
     payload = json.loads(raw_body)
     logger.debug("Webhook payload received (full body at DEBUG only).")
 
-    # Step 4 — enqueue each messaging event as a background task
+    # Step 4 — schedule each messaging event as a tracked background task
     event_count = 0
     for entry in payload.get("entry", []):
         for messaging_event in entry.get("messaging", []):
-            background_tasks.add_task(_safe_process, messaging_event)
+            register_task(_safe_process(messaging_event))
             event_count += 1
 
     logger.info("Webhook received: %d event(s) queued for processing.", event_count)
@@ -116,10 +129,18 @@ async def receive_webhook(
 
 async def _safe_process(messaging_event: dict) -> None:
     """
-    Wrap process_messaging_event so exceptions do not propagate to FastAPI.
+    Wrap process_messaging_event so exceptions do not propagate silently.
 
-    BackgroundTask exceptions that bubble up are swallowed silently by FastAPI.
-    Catching them here and logging them ourselves gives us visibility.
+    asyncio.Task exceptions that are not retrieved are logged as warnings by
+    the event loop.  Catching them here and logging them ourselves gives us
+    visibility with structured context (the message ID).
+
+    Exceptions are also reported to Sentry when configured. The
+    capture_exception() call picks up the current exception from the interpreter
+    stack — no arguments needed. Sentry's with_locals=False configuration
+    ensures that local variables, including messaging_event contents, are NOT
+    included in the captured event.
+
     The 200 was already sent — there is nothing to roll back.
     """
     try:
@@ -130,3 +151,6 @@ async def _safe_process(messaging_event: dict) -> None:
             # log only the mid if available, never full content
             messaging_event.get("message", {}).get("mid", "<no-mid>"),
         )
+        if settings.sentry_dsn:
+            import sentry_sdk
+            sentry_sdk.capture_exception()

@@ -1,5 +1,5 @@
 """
-tests/test_phase4_ai_tools.py — Phase 4: Extended AI Capabilities.
+tests/test_phase4_ai_tools.py — Extended AI Capabilities.
 
 Tests:
   - Image generation (HF FLUX.1-schnell thread pool execution)

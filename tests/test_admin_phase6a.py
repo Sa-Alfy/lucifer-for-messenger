@@ -1,5 +1,5 @@
 """
-Phase 6a admin controls — unit/integration tests for the self-verify checklist.
+Admin controls — unit/integration tests for the self-verify checklist.
 """
 
 import os

@@ -1,10 +1,10 @@
 """
-services/event_processor.py — Per-event processing pipeline (Phase 7).
+services/event_processor.py — Per-event processing pipeline.
 
 This module is the central routing hub: it validates, deduplicates, and
 dispatches every inbound Messenger event to the correct handler.
 
-Pipeline (Phase 6b, updated Phase 7):
+Pipeline:
   1. Ignore echo events (bot's own sent messages) — prevents reply loops.
   2. Ignore non-message events (delivery/read receipts) — nothing to do.
   3. Atomically record the event as processed AND upsert the user row in a
@@ -24,7 +24,7 @@ Pipeline (Phase 6b, updated Phase 7):
      executed directly and the formatted result sent to the user — no second
      Groq round-trip.  Normal text replies are sent as usual.
 
-Command dispatch table (Phase 7):
+Command dispatch table:
   /persona   — switch active persona (no AI call)
   /image     — generate image via HF FLUX.1-schnell + upload to Supabase
   /ocr       — extract text from a photo via Gemini vision
@@ -39,7 +39,7 @@ Command dispatch table (Phase 7):
   /menu      — alias for /help
   help       — plain-text alias for /help
 
-Idempotency design (unchanged from Phase 2):
+Idempotency design:
   The processed_webhook_events INSERT and the users UPSERT run inside a single
   transaction.  The INSERT uses ON CONFLICT DO NOTHING with RETURNING to detect
   duplicates atomically — if the INSERT returns no row, this event has already
@@ -356,7 +356,7 @@ async def handle_currency_command(pool, redis, psid: str, text: str, image_url: 
         )
 
 
-# ── Download command (Phase 7) ───────────────────────────────────────────────
+# ── Download command ──────────────────────────────────────────────────────────
 
 async def handle_download_command(pool, redis, psid: str, text: str, image_url: str | None) -> None:
     """
@@ -367,7 +367,7 @@ async def handle_download_command(pool, redis, psid: str, text: str, image_url: 
 
     This handler does NOT need its own BackgroundTasks wrapping — every command
     already runs inside the background task that process_messaging_event was
-    dispatched into in Phase 2, so this is already off the webhook critical path.
+    dispatched into, so this is already off the webhook critical path.
     """
     async with pool.acquire() as conn:
         if not await is_feature_enabled(conn, "downloader"):
@@ -397,7 +397,7 @@ async def handle_download_command(pool, redis, psid: str, text: str, image_url: 
         await send_text_message(psid, "Sorry, that download failed — try again in a moment.")
 
 
-# ── Admin commands and quick replies (Phase 6a) ───────────────────────────────
+# ── Admin commands and quick replies ──────────────────────────────────────────
 
 FLAG_DISPLAY_NAMES = {
     "ai_chat": "AI Chat",
@@ -495,7 +495,7 @@ async def handle_admin_command(pool, redis, psid: str, text: str, image_url: str
         )
 
 
-# ── Help / Menu quick-reply handler (Phase 6b) ───────────────────────────────
+# ── Help / Menu quick-reply handler ───────────────────────────────────────────
 
 # Each entry: (button label shown to user, quick-reply payload, usage hint sent on tap)
 HELP_MENU_ITEMS: list[tuple[str, str, str]] = [
